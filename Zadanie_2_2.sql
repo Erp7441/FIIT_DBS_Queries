@@ -18,9 +18,9 @@ WHERE id IN (
     WHERE postid IN ( -- Ktory komentovali
         SELECT id
         FROM posts
-        WHERE posts.parentid = 3133 -- Na poste vytvorenym userom s ID (parentid)
+        WHERE posts.owneruserid = 1076348 -- Na poste vytvorenym userom s ID (parentid)
     )
     GROUP BY userid
     -- ORDER BY MAX(creationdate) DESC -- TODO I guess this is useless
 )
-ORDER BY users.creationdate DESC
+ORDER BY users.creationdate
