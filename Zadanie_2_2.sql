@@ -1,40 +1,31 @@
--- Potrebujem ziskat uzivatelov ktori komentovali prispevky ktore zalozil pouzivatel na vstupe.
--- 1. cast. Ziskat vsetky prispevky od pouzivatela
--- 2. cast. najst vsetkych userov ktory komentovali prispevky pouzivatela
-
--- Vypracujte zoznam diskutuj´ucich pre pouˇz´ıvateˇla user id, obsahuj´uci pouˇz´ıvateˇlov, ktor´ı komentovali pr´ıspevky,
--- ktor´e dan´y pouˇz´ıvateˇl zaloˇzil alebo na ktor´ych komentoval. Usporiadajte pouˇz´ıvateˇlov v z´avislosti od d´atumu ich
--- registr´acie, zaˇc´ınaj´uc s t´ymi, ktor´ı sa zaregistrovali ako prv´ı.
--- JSON sch´ema HTTP odpovede sa nach´adza v s´ubore schemas/users.json. Pr´ıklad odpovede pre pouˇz´ıvatela s
--- ID 1076348 sa nach´adza v bloku 2.
--- 3
-
 SELECT
     id, reputation,
     (to_char(creationdate AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MSOF')) AS creationdate,
     displayname,
     (to_char(lastaccessdate::TIMESTAMP AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MSOF') ) AS lastaccessdate,
     websiteurl, location, aboutme, views, upvotes, downvotes, profileimageurl, age, accountid
-FROM users -- Vyber userov
+FROM users
+-- Kde user_id sa nachadza v subquery userov ktory komentovali na poste ktory bol vytvoreny hladanym pouzivatelom
 WHERE id IN (
+    -- Ziskaj userov ktory komentovali na poste ktory bol vytvoreny hladanym pouzivatelom
     SELECT DISTINCT userid
     FROM comments
-    WHERE postid IN ( -- Ktory komentovali
+    WHERE postid IN (
         SELECT id
         FROM posts
-        WHERE posts.owneruserid = 1076348 -- Na poste vytvorenym userom s ID (parentid)
-    ) -- AND userid != 1 -- Odfiltrovanie usera na ktoreho pozerame TODO:: Podla zadania to mame mat kamarata sameho
-    -- seba
+        WHERE posts.owneruserid = 1076348 -- Post vytvorenym hladanym pouzivatelom
+    ) -- AND userid != 1 -- Odfiltrovanie usera na ktoreho pozerame TODO:: Podla zadania mame mat kamarata seba
     GROUP BY userid
 )
+-- Alebo sa user_id nachadza v subquery userov ktory komentovali na poste na ktorom komentoval hladany pouzivatel
 OR id IN (
+    -- Ziskaj userov ktory komentovali na poste na ktorom komentoval hladany pouzivatel
     SELECT DISTINCT userid
     FROM comments
     WHERE postid IN (
         SELECT postid
         FROM comments
-        WHERE userid = 1076348  -- Je ID postu kde komentoval user
-    ) -- AND userid != 1 -- Odfiltrovanie usera na ktoreho pozerame TODO:: Podla zadania to mame mat kamarata sameho
-    -- seba
+        WHERE userid = 1076348  -- Post kde komentoval hladany pouzivatel
+    ) -- AND userid != 1 -- Odfiltrovanie usera na ktoreho pozerame TODO:: Podla zadania mame mat kamarata seba
 )
 ORDER BY users.creationdate
