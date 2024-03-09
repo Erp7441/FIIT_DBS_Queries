@@ -21,6 +21,14 @@ WHERE id IN (
         WHERE posts.owneruserid = 1076348 -- Na poste vytvorenym userom s ID (parentid)
     )
     GROUP BY userid
-    -- ORDER BY MAX(creationdate) DESC -- TODO I guess this is useless
+)
+OR id IN (
+    SELECT owneruserid  -- Ziskanie user id ownerov postov
+    FROM posts
+    WHERE id IN (  -- Kde post id
+        SELECT postid
+        FROM comments
+        WHERE userid = 1076348  -- Je ID postu kde komentoval user
+    )
 )
 ORDER BY users.creationdate
