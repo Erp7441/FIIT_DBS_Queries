@@ -9,7 +9,12 @@
 -- ID 1076348 sa nach´adza v bloku 2.
 -- 3
 
-SELECT *
+SELECT
+    id, reputation,
+    (to_char(creationdate AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MSOF')) AS creationdate,
+    displayname,
+    (to_char(lastaccessdate::TIMESTAMP AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MSOF') ) AS lastaccessdate,
+    websiteurl, location, aboutme, views, upvotes, downvotes, profileimageurl, age, accountid
 FROM users -- Vyber userov
 WHERE id IN (
     SELECT DISTINCT userid
@@ -17,7 +22,7 @@ WHERE id IN (
     WHERE postid IN ( -- Ktory komentovali
         SELECT id
         FROM posts
-        WHERE posts.owneruserid = 1 -- Na poste vytvorenym userom s ID (parentid)
+        WHERE posts.owneruserid = 1076348 -- Na poste vytvorenym userom s ID (parentid)
     ) -- AND userid != 1 -- Odfiltrovanie usera na ktoreho pozerame TODO:: Podla zadania to mame mat kamarata sameho
     -- seba
     GROUP BY userid
@@ -28,7 +33,7 @@ OR id IN (
     WHERE postid IN (
         SELECT postid
         FROM comments
-        WHERE userid = 1  -- Je ID postu kde komentoval user
+        WHERE userid = 1076348  -- Je ID postu kde komentoval user
     ) -- AND userid != 1 -- Odfiltrovanie usera na ktoreho pozerame TODO:: Podla zadania to mame mat kamarata sameho
     -- seba
 )

@@ -5,9 +5,8 @@
 WITH weekday_counts AS (
     SELECT
         trim(to_char(creationdate, 'day')) AS weekday,  -- Prekonvertovanie creation datumu na den tyzdna
-        COUNT(DISTINCT post_id) AS total_count  -- Pocet vsetkych postov...
+        COUNT(id) AS total_count  -- Pocet vsetkych postov...
     FROM posts p
-    JOIN post_tags ON p.id = post_tags.post_id
     GROUP BY weekday  -- ...poda tyzdna
 )
 SELECT
