@@ -9,26 +9,27 @@
 -- ID 1076348 sa nach´adza v bloku 2.
 -- 3
 
--- Previous query
 SELECT *
 FROM users -- Vyber userov
 WHERE id IN (
-    SELECT userid
+    SELECT DISTINCT userid
     FROM comments
     WHERE postid IN ( -- Ktory komentovali
         SELECT id
         FROM posts
-        WHERE posts.owneruserid = 1076348 -- Na poste vytvorenym userom s ID (parentid)
-    )
+        WHERE posts.owneruserid = 1 -- Na poste vytvorenym userom s ID (parentid)
+    ) -- AND userid != 1 -- Odfiltrovanie usera na ktoreho pozerame TODO:: Podla zadania to mame mat kamarata sameho
+    -- seba
     GROUP BY userid
 )
 OR id IN (
-    SELECT owneruserid  -- Ziskanie user id ownerov postov
-    FROM posts
-    WHERE id IN (  -- Kde post id
+    SELECT DISTINCT userid
+    FROM comments
+    WHERE postid IN (
         SELECT postid
         FROM comments
-        WHERE userid = 1076348  -- Je ID postu kde komentoval user
-    )
+        WHERE userid = 1  -- Je ID postu kde komentoval user
+    ) -- AND userid != 1 -- Odfiltrovanie usera na ktoreho pozerame TODO:: Podla zadania to mame mat kamarata sameho
+    -- seba
 )
 ORDER BY users.creationdate
