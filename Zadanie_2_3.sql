@@ -4,22 +4,23 @@
 
 WITH weekday_counts AS (
     SELECT
-        to_char(creationdate, 'day') AS weekday,  -- Prekonvertovanie creation datumu na den tyzdna
+        trim(to_char(creationdate, 'day')) AS weekday,  -- Prekonvertovanie creation datumu na den tyzdna
         COUNT(DISTINCT post_id) AS total_count  -- Pocet vsetkych postov...
     FROM posts p
     JOIN post_tags ON p.id = post_tags.post_id
     GROUP BY weekday  -- ...poda tyzdna
 )
 SELECT
-    to_char(p.creationdate, 'day') AS weekday,  -- Prekonvertovanie creation datumu na den tyzdna
+    trim(to_char(p.creationdate, 'day')) AS weekday,  -- Prekonvertovanie creation datumu na den tyzdna
     ROUND(((COUNT(t.tagname)::FLOAT / wc.total_count::FLOAT) * 100)::numeric, 2) AS percent  -- Vypocet percent
 FROM
     tags t
     JOIN post_tags pt ON t.id = pt.tag_id  -- Aby sme vedeli priradit tag_id k post_id
     JOIN posts p ON pt.post_id = p.id  -- Aby sme vedelit priradit post k post_id
-    JOIN weekday_counts wc ON to_char(p.creationdate, 'day') = wc.weekday  -- Spojenie total count tabulky na tyzdnoch
+    JOIN weekday_counts wc ON trim(to_char(p.creationdate, 'day')) = wc.weekday  -- Spojenie total count tabulky na
+-- tyzdnoch
 WHERE t.tagname = 'linux' -- odfiltrovanie tagu
-GROUP BY to_char(p.creationdate, 'day'), t.tagname, wc.total_count
+GROUP BY trim(to_char(p.creationdate, 'day')), t.tagname, wc.total_count
 ORDER BY
     CASE
         WHEN trim(to_char(p.creationdate, 'day')) = 'monday' THEN 1
