@@ -5,21 +5,20 @@
 WITH weekday_counts AS (
     SELECT
         to_char(creationdate, 'day') AS weekday,  -- Prekonvertovanie creation datumu na den tyzdna
-        COUNT(*) AS total_count  -- Pocet vsetkych postov...
-    FROM posts
-    GROUP BY weekday  -- ...podla tyzdna
+        COUNT(DISTINCT post_id) AS total_count  -- Pocet vsetkych postov...
+    FROM posts p
+    JOIN post_tags ON p.id = post_tags.post_id
+    GROUP BY weekday  -- ...poda tyzdna
 )
 SELECT
     to_char(p.creationdate, 'day') AS weekday,  -- Prekonvertovanie creation datumu na den tyzdna
-    --COUNT(t.tagname),  -- spocitaj vsetky occurences odfiltrovaneho tagnamu TODO:: Remove
-    --wc.total_count,  -- total count per tyzden TODO:: Remove
-    ROUND(((COUNT(t.tagname)::FLOAT / wc.total_count::FLOAT) * 100)::numeric, 2) AS percent
+    ROUND(((COUNT(t.tagname)::FLOAT / wc.total_count::FLOAT) * 100)::numeric, 2) AS percent  -- Vypocet percent
 FROM
     tags t
-    JOIN post_tags pt ON t.id = pt.tag_id  -- Spojenie s tabolkou post tag id's
-    JOIN posts p ON pt.post_id = p.id  -- Spojenie s tabulkou actual postov (aby sme si vedeli potiahnut creation date)
+    JOIN post_tags pt ON t.id = pt.tag_id  -- Aby sme vedeli priradit tag_id k post_id
+    JOIN posts p ON pt.post_id = p.id  -- Aby sme vedelit priradit post k post_id
     JOIN weekday_counts wc ON to_char(p.creationdate, 'day') = wc.weekday  -- Spojenie total count tabulky na tyzdnoch
-WHERE t.tagname = 'linux' -- odfiltrovanie tagnamu
+WHERE t.tagname = 'linux' -- odfiltrovanie tagu
 GROUP BY to_char(p.creationdate, 'day'), t.tagname, wc.total_count
 ORDER BY
     CASE
@@ -31,3 +30,34 @@ ORDER BY
         WHEN trim(to_char(p.creationdate, 'day')) = 'saturday' THEN 6
         WHEN trim(to_char(p.creationdate, 'day')) = 'sunday' THEN 7
     END
+
+
+-- Correct
+-- WITH total_posts AS (
+--     SELECT EXTRACT(DOW FROM posts.creationdate) AS weekday, COUNT(DISTINCT posts.id) AS total
+--     FROM posts
+--              JOIN post_tags ON posts.id = post_tags.post_id
+--     GROUP BY weekday
+-- ),
+--      linux_posts AS (
+--          SELECT EXTRACT(DOW FROM posts.creationdate) AS weekday, COUNT(DISTINCT posts.id) AS linux_total
+--          FROM posts
+--                   JOIN post_tags ON posts.id = post_tags.post_id
+--                   JOIN tags ON post_tags.tag_id = tags.id
+--          WHERE tagname = 'linux'
+--          GROUP BY weekday
+--      )
+-- SELECT
+--     CASE total_posts.weekday
+--         WHEN 0 THEN 'Sunday'
+--         WHEN 1 THEN 'Monday'
+--         WHEN 2 THEN 'Tuesday'
+--         WHEN 3 THEN 'Wednesday'
+--         WHEN 4 THEN 'Thursday'
+--         WHEN 5 THEN 'Friday'
+--         WHEN 6 THEN 'Saturday'
+--         END AS weekday_name,
+--     (linux_posts.linux_total::decimal / total_posts.total * 100) AS percentage
+-- FROM linux_posts
+--          JOIN total_posts ON linux_posts.weekday = total_posts.weekday
+-- ORDER BY total_posts.weekday;
