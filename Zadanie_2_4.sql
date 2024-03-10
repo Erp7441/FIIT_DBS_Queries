@@ -11,7 +11,6 @@ WITH closed_posts_duration AS (
         round((extract(EPOCH from (closeddate - creationdate))::decimal / 60), 2) as duration
     FROM posts
     WHERE closeddate IS NOT NULL
-    ORDER BY id
 )
 -- Vyber vsetkych udajov o postoch ktore su kratsie alebo rovnako dlhe ako duration
 SELECT *
