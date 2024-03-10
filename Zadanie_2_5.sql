@@ -4,7 +4,7 @@ WITH post_id_tags AS (
     SELECT post_id, array_agg(tagname) as tags
     FROM post_tags
     -- Spojenie tabuliek mien tagov a posts_tags podla ID aby sme dostali tabulku post_id s listom mien ich tagov
-    JOIN tags ON post_tags.tag_id = tags.id
+    LEFT JOIN tags ON post_tags.tag_id = tags.id
     GROUP BY post_id
 )
 SELECT
@@ -18,8 +18,8 @@ SELECT
     tags
 FROM posts
 -- Spojenie s posts tabulkou na IDcke aby sme dostali zoznam postov s ich atributmi + novym zoznamom tags
-JOIN post_id_tags ON post_id = posts.id
+LEFT JOIN post_id_tags ON post_id = posts.id
 -- Vyhladavanie stringu v tele a v titulku postu
-WHERE posts.title LIKE '%linux%' OR posts.body LIKE '%linux%'
+WHERE posts.title ILIKE '%computer%' OR posts.body ILIKE '%computer%'
 ORDER BY creationdate DESC
-LIMIT 1  -- Limit poctu postov
+LIMIT 2  -- Limit poctu postov
