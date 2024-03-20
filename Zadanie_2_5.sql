@@ -20,6 +20,6 @@ FROM posts
 -- Spojenie s posts tabulkou na IDcke aby sme dostali zoznam postov s ich atributmi + novym zoznamom tags
 LEFT JOIN post_id_tags ON post_id = posts.id
 -- Vyhladavanie stringu v tele a v titulku postu
-WHERE posts.title ILIKE '%computer%' OR posts.body ILIKE '%computer%'
+WHERE posts.title ILIKE '%%' OR posts.body ILIKE '%%'
 ORDER BY creationdate DESC
-LIMIT 2  -- Limit poctu postov
+--LIMIT 2  -- Limit poctu postov
