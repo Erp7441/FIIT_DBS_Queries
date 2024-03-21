@@ -12,5 +12,16 @@
       </jdbc-additional-properties>
       <working-dir>$ProjectFileDir$</working-dir>
     </data-source>
+    <data-source source="LOCAL" name="postgres@10.144.240.5" uuid="6d7ad58f-4328-4632-84c5-ea40b1fae83d">
+      <driver-ref>postgresql</driver-ref>
+      <synchronize>true</synchronize>
+      <jdbc-driver>org.postgresql.Driver</jdbc-driver>
+      <jdbc-url>jdbc:postgresql://10.144.240.5:5432/postgres</jdbc-url>
+      <jdbc-additional-properties>
+        <property name="SHOW_TEMPLATE_DATABASES" value="true" />
+        <property name="database.postgres.introspect.system.schemas" value="true" />
+      </jdbc-additional-properties>
+      <working-dir>$ProjectFileDir$</working-dir>
+    </data-source>
   </component>
 </project>

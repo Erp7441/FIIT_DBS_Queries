@@ -1,0 +1,15 @@
+-- Separatne recordy v tabulke
+    -- Jeden pre badge
+    -- Jeden pre comment
+    -- Jeden pre post?
+
+SELECT
+    users.id,
+    c.text AS comment_text,
+    c.creationdate AS comment_date,
+    p.title AS post_title,
+    p.creationdate AS post_date
+FROM users
+         JOIN public.comments c on users.id = c.userid
+         JOIN public.posts p ON c.postid = p.id
+WHERE users.id = 120 AND c.creationdate <= '2009-07-18 03:47:30.730000 +00:00'
