@@ -48,22 +48,18 @@
 
 -- My posts
 SELECT
-	ROW_NUMBER() OVER () AS position,
-	badge_id,
-	badge_name,
-	TO_CHAR(badge_date AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MSOF:TZM'),
-	ROW_NUMBER() OVER () AS position,
-	post_id,
-	post_title,
-	TO_CHAR(post_date AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MSOF:TZM')
+	badge_id, badge_name,
+	TO_CHAR(badge_date AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MSOF:TZM') AS badge_date,
+	post_id, post_title,
+	TO_CHAR(post_date AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MSOF:TZM') AS post_date
 FROM (
 	SELECT
 		DISTINCT ON (post_date)
 		*
 	FROM (
 		SELECT
-		DISTINCT ON (badge_id)  -- Vyfiltrovanie duplikatov z subquery
-		*
+			DISTINCT ON (badge_id)  -- Vyfiltrovanie duplikatov z subquery
+			*
 		FROM (
 			-- Ziska badge info + komentare ktore boli vytvorene skor ako badge
 			SELECT
@@ -78,13 +74,13 @@ FROM (
 				JOIN badges b2 ON users.id = b2.userid
 				JOIN posts p2 ON p2.owneruserid = b2.userid
 			-- Filtrovanie userid a vsetkych postov ktore boli vytvorene skor ako badge
-			WHERE users.id = 120 AND b2.date >= p2.creationdate
-		) AS badge_post
-		ORDER BY badge_id, badge_post.post_date DESC  -- Toto zaruci ze zaznamy su zoradene od najnovsieho postu.
+			WHERE users.id = 120 AND b2.date >= p2.creationdate  -- userid je parameter
+		) AS bp
+		ORDER BY badge_id, bp.post_date DESC  -- Toto zaruci ze zaznamy su zoradene od najnovsieho postu.
 		-- To namena ze DISTINCT na zaciatku odfiltruje vsetky stare posty
-	) AS submain
+	) AS s
 	ORDER BY post_date, post_id
-) AS main
+) AS m
 
 
 -- Bajo (for reference only)

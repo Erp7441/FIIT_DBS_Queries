@@ -1,7 +1,7 @@
 SELECT
 	post_id, title, displayname, text,
-	TO_CHAR(posts_created_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MSOF:TZM'),
-	TO_CHAR(created_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MSOF:TZM'),
+	TO_CHAR(posts_created_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MSOF:TZM') AS posts_created_at,
+	TO_CHAR(created_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MSOF:TZM') AS created_at,
 	TO_CHAR((created_at - last_comment_date), 'HH24:MI:SS.MS') AS diff,
 	TO_CHAR(AVG((created_at - last_comment_date)) OVER (ORDER BY created_at), 'HH24:MI:SS.MS') AS avg_diff
 FROM (
@@ -29,8 +29,8 @@ FROM (
 		LEFT JOIN users u ON c.userid = u.id
 		JOIN post_tags pt on p.id = pt.post_id
 		JOIN tags t on t.id = pt.tag_id
-     WHERE tagname = 'networking' AND p.commentcount > 40
-) AS main_table
+     WHERE tagname = 'networking' AND p.commentcount > 40  -- Parametre
+) AS m
 ORDER BY posts_created_at, created_at
 
 
