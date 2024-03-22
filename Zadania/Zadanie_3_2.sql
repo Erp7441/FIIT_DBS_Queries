@@ -1,10 +1,7 @@
 SELECT
 	post_id, title, displayname, text, posts_created_at, created_at,
-	TO_CHAR(
-			(EXTRACT(EPOCH FROM (created_at - last_comment_date)) || ' second')::INTERVAL,
-			'HH24:MI:SS.MS'
-	) AS diff
-	-- TODO:: AVG pomocou array agregacie a AVG, mozno union pod tuto tabulku a z tejto tabulky vypocitat AVG?
+	TO_CHAR((created_at - last_comment_date), 'HH24:MI:SS.MS') AS diff,
+	TO_CHAR(AVG((created_at - last_comment_date)) OVER (ORDER BY created_at), 'HH24:MI:SS.MS') AS avg_diff
 FROM (
      SELECT
          p.id AS post_id,
@@ -13,7 +10,7 @@ FROM (
          c.text AS text,
          p.creationdate AS posts_created_at,
          c.creationdate AS created_at,
-         NULLIF((
+         COALESCE((
              SELECT creationdate
              FROM comments
              WHERE postid = p.id AND creationdate < c.creationdate
@@ -25,12 +22,14 @@ FROM (
              WHERE id = p.id
 		 )) AS last_comment_date
      FROM
-         comments c
-             JOIN posts p ON c.postid = p.id
-             JOIN users u ON c.userid = u.id
-     WHERE c.postid = 1034137
+		comments c
+		JOIN posts p ON c.postid = p.id
+		LEFT JOIN users u ON c.userid = u.id
+		JOIN post_tags pt on p.id = pt.post_id
+		JOIN tags t on t.id = pt.tag_id
+     WHERE tagname = 'networking' AND p.commentcount > 40
 ) AS main_table
-WHERE last_comment_date NOTNULL
+ORDER BY posts_created_at, created_at
 
 
 

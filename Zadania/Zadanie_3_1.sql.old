@@ -1,0 +1,159 @@
+-- TODO:: Save the repeating query??
+
+SELECT
+    'badge' AS type,
+    ROW_NUMBER() OVER (ORDER BY t.badge_id) AS position,
+    t.badge_id AS id,
+    t.badge_name AS title,
+    t.badge_date AS created_at
+FROM (
+    SELECT
+        DISTINCT ON (badge_id)  -- Vyfiltrovanie duplikatov z subquery
+        badge_comment.badge_id AS badge_id,
+        badge_name,
+        badge_date,
+        p.id AS post_id,
+        p.title AS post_title,
+        p.creationdate AS post_date
+    FROM (
+        -- Ziska badge info + komentare ktore boli vytvorene skor ako badge
+        SELECT
+            b2.id AS badge_id,
+            b2.name AS badge_name,
+            b2.date AS badge_date,
+            c2.creationdate AS comment_date,
+            c2.postid AS post_id
+        -- Vytvori tabulu s infom o useroch, ich badges a ich komentarov
+        FROM users
+            JOIN badges b2 ON users.id = b2.userid
+            JOIN comments c2 ON users.id = c2.userid
+        -- Filtrovanie userid a vsetkych komentare ktore boli vytvorene skor ako badge
+        WHERE users.id = 120 AND b2.date >= c2.creationdate
+    ) AS badge_comment
+    JOIN posts p ON badge_comment.post_id = p.id
+    ORDER BY badge_id, badge_comment.comment_date DESC  -- Toto zaruci ze zaznamy su zoradene od najnovsieho komentara. To znamena ze DISTINCT na zaciatku odfiltruje vsetky stare komentare
+) AS t
+UNION ALL
+SELECT
+    'post' AS type,
+    ROW_NUMBER() OVER (ORDER BY t.badge_id) AS position,
+    post_id AS id,
+    post_title AS title,
+    post_date AS created_at
+FROM (
+    SELECT
+    DISTINCT ON (badge_id)  -- Vyfiltrovanie duplikatov z subquery
+    badge_comment.badge_id AS badge_id,
+    p.id AS post_id,
+    p.title AS post_title,
+    p.creationdate AS post_date
+    FROM (
+        -- Ziska badge info + komentare ktore boli vytvorene skor ako badge
+        SELECT
+            b2.id AS badge_id,
+            b2.name AS badge_name,
+            b2.date AS badge_date,
+            c2.creationdate AS comment_date,
+            c2.postid AS post_id
+        -- Vytvori tabulu s infom o useroch, ich badges a ich komentarov
+        FROM users
+            JOIN badges b2 ON users.id = b2.userid
+            JOIN comments c2 ON users.id = c2.userid
+        -- Filtrovanie userid a vsetkych komentare ktore boli vytvorene skor ako badge
+        WHERE users.id = 120 AND b2.date >= c2.creationdate
+    ) AS badge_comment
+    JOIN posts p ON badge_comment.post_id = p.id
+    ORDER BY badge_id, badge_comment.comment_date DESC  -- Toto zaruci ze zaznamy su zoradene od najnovsieho komentara. To znamena ze DISTINCT na zaciatku odfiltruje vsetky stare komentare
+) AS t
+
+-- Badge + comment date
+-- SELECT
+--     DISTINCT ON (id)
+--     *
+-- FROM badges b, LATERAL (
+--     SELECT
+--         b2.id AS badge_id,
+--         c2.creationdate AS comment_date
+--     FROM users
+--              JOIN badges b2 ON users.id = b2.userid
+--              JOIN comments c2 ON users.id = c2.userid
+--              JOIN posts p2 ON c2.postid = p2.id
+--     WHERE users.id = 120 AND b2.id = b.id AND b2.date >= c2.creationdate
+--     ORDER BY comment_date DESC
+--     ) AS badge_comment
+
+-- Working query but not really that optimal
+-- SELECT
+--     DISTINCT ON (id)
+--     badge_comment.badge_id,
+--     b.name,
+--     b.date,
+--     badge_comment.post_id,
+--     badge_comment.post_title,
+--     badge_comment.post_date
+-- FROM badges b, LATERAL (
+--     SELECT
+--         b2.id AS badge_id,
+--         c2.creationdate AS comment_date,
+--         p2.id AS post_id,
+--         p2.title AS post_title,
+--         p2.creationdate AS post_date
+--     FROM users
+--         JOIN badges b2 ON users.id = b2.userid
+--         JOIN comments c2 ON users.id = c2.userid
+--         JOIN posts p2 ON c2.postid = p2.id
+--     WHERE users.id = 120 AND b2.id = b.id AND b2.date >= c2.creationdate
+--     ORDER BY comment_date DESC
+--     ) AS badge_comment
+
+-- Optimalized query 1
+-- SELECT
+--     DISTINCT ON (badge_id)
+--     badge_comment.badge_id,
+--     badge_name,
+--     badge_date,
+--     p.id AS post_id,
+--     p.title AS post_title,
+--     badge_comment.comment_date,
+--     p.creationdate AS post_date
+-- FROM (
+--          SELECT
+--              b2.id AS badge_id,
+--              b2.name AS badge_name,
+--              b2.date AS badge_date,
+--              c2.creationdate AS comment_date,
+--              c2.postid AS post_id
+--          FROM users
+--                   JOIN badges b2 ON users.id = b2.userid
+--                   JOIN comments c2 ON users.id = c2.userid
+--          WHERE users.id = 120 AND b2.date >= c2.creationdate
+--      ) AS badge_comment
+--          JOIN posts p ON badge_comment.post_id = p.id
+-- ORDER BY badge_id, badge_comment.comment_date DESC
+
+-- Commented optimized
+-- SELECT
+--     DISTINCT ON (badge_id)  -- Vyfiltrovanie duplikatov z subquery
+--                             badge_comment.badge_id,
+--                             badge_name,
+--                             badge_date,
+--                             p.id AS post_id,
+--                             p.title AS post_title,
+--                             p.creationdate AS post_date
+-- FROM (
+--          -- Ziska badge info + komentare ktore boli vytvorene skor ako badge
+--          SELECT
+--              b2.id AS badge_id,
+--              b2.name AS badge_name,
+--              b2.date AS badge_date,
+--              c2.creationdate AS comment_date,
+--              c2.postid AS post_id
+--          -- Vytvori tabulu s infom o useroch, ich badges a ich komentarov
+--          FROM users
+--                   JOIN badges b2 ON users.id = b2.userid
+--                   JOIN comments c2 ON users.id = c2.userid
+--          -- Filtrovanie userid a vsetkych komentare ktore boli vytvorene skor ako badge
+--          WHERE users.id = 120 AND b2.date >= c2.creationdate
+--      ) AS badge_comment
+--          JOIN posts p ON badge_comment.post_id = p.id
+-- ORDER BY badge_id, badge_comment.comment_date DESC  -- Toto zaruci ze zaznamy su zoradene od najnovsieho komentara. To znamena ze DISTINCT na zaciatku odfiltruje vsetky stare komentare
