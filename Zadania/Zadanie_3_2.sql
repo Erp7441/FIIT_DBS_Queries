@@ -1,5 +1,7 @@
 SELECT
-	post_id, title, displayname, text, posts_created_at, created_at,
+	post_id, title, displayname, text,
+	TO_CHAR(posts_created_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MSOF:TZM'),
+	TO_CHAR(created_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MSOF:TZM'),
 	TO_CHAR((created_at - last_comment_date), 'HH24:MI:SS.MS') AS diff,
 	TO_CHAR(AVG((created_at - last_comment_date)) OVER (ORDER BY created_at), 'HH24:MI:SS.MS') AS avg_diff
 FROM (
