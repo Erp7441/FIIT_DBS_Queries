@@ -8,6 +8,7 @@ FROM (
 		displayname, body, text,
 		c.score AS score,
 		-- Kalkulacia pozicie komentara v tabulke comments pomocou row number window funkcie
+		-- Pozicia komentara je relativna v ramci postu
 		ROW_NUMBER() OVER (PARTITION BY p.id ORDER BY c.id) AS position,
 		TO_CHAR(p.creationdate AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MSOF:TZM') AS creationdate
 	FROM comments c

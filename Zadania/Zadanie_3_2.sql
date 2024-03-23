@@ -16,7 +16,7 @@ FROM (
 		c.text AS text,
 		p.creationdate AS posts_created_at,
 		c.creationdate AS created_at,
-		-- Ziskanie datumu posledneho komentara ALEBO datumu vytvorenia postu pokial  komentar neexistuje.
+		-- Ziskanie datumu posledneho komentara ALEBO datumu vytvorenia postu pokial komentar neexistuje.
 		COALESCE((
 			SELECT creationdate
 			FROM comments
