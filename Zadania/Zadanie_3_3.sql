@@ -1,7 +1,5 @@
 SELECT
-	id, displayname, body, text, score,
-	-- Podla JSON zadania ma position byt od 1 do <position>. Aspon tak som tomu pochopil.
-	position + 2 AS position  -- Parameter
+	id, displayname, body, text, score, position
 FROM (
 	-- Tabulka kde si najoinujem dohromady komentare, posty ktorym patria, tagoch tych postov a userov ktory
 	-- vytvorili ten komentar
@@ -10,7 +8,7 @@ FROM (
 		displayname, body, text,
 		c.score AS score,
 		-- Kalkulacia pozicie komentara v tabulke comments pomocou row number window funkcie
-		(ROW_NUMBER() OVER (ORDER BY c.id)) % 2 AS position, -- Parameter
+		ROW_NUMBER() OVER (PARTITION BY p.id ORDER BY c.id) AS position, -- Parameter
 		TO_CHAR(p.creationdate AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MSOF:TZM') AS creationdate
 	FROM comments c
 	JOIN posts p ON c.postid = p.id
@@ -21,7 +19,7 @@ FROM (
 	WHERE tagname = 'linux'  -- Parameter
 ) AS s
 -- Filtrovanie kazdeho K komentara podla pozicie
-WHERE position % 2 = 0  -- Parameter
+WHERE position = 2  -- Parameter
 ORDER BY creationdate
 LIMIT 1  -- Parameter
 
