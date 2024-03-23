@@ -5,8 +5,8 @@ SELECT
 	TO_CHAR(post_date AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MSOF:TZM') AS post_date
 FROM (
 	SELECT
-		-- Filtrovanie unikatnych datumov komentarov kedze pokial viacero badgov bolo ziskanych za jeden
-		-- komentar. Mame zobrat len prvy badge ktory bol ziskany za ten komentar a vylucit ho z moznosti.
+		-- Filtrovanie unikatnych datumov postov kedze pokial viacero badgov bolo ziskanych za jeden
+		-- post. Mame zobrat len prvy badge ktory bol ziskany za ten komentar a vylucit ho z moznosti.
 		DISTINCT ON (post_date)
 		*
 	FROM (
@@ -14,7 +14,7 @@ FROM (
 			DISTINCT ON (badge_id)  -- Vyfiltrovanie duplikatov z subquery
 			*
 		FROM (
-			-- Ziska badge info + komentare ktore boli vytvorene skor ako badge
+			-- Ziska badge info + posty ktore boli vytvorene skor ako badge
 			SELECT
 				b2.id AS badge_id,
 				b2.name AS badge_name,
