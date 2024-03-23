@@ -1,5 +1,65 @@
--- My comments
+SELECT
+	badge_id, badge_name,
+	TO_CHAR(badge_date AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MSOF:TZM') AS badge_date,
+	post_id, post_title,
+	TO_CHAR(post_date AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MSOF:TZM') AS post_date
+FROM (
+	SELECT
+		-- Filtrovanie unikatnych datumov komentarov kedze pokial viacero badgov bolo ziskanych za jeden
+		-- komentar. Mame zobrat len prvy badge ktory bol ziskany za ten komentar a vylucit ho z moznosti.
+		DISTINCT ON (post_date)
+		*
+	FROM (
+		SELECT
+			DISTINCT ON (badge_id)  -- Vyfiltrovanie duplikatov z subquery
+			*
+		FROM (
+			-- Ziska badge info + komentare ktore boli vytvorene skor ako badge
+			SELECT
+				b2.id AS badge_id,
+				b2.name AS badge_name,
+				b2.date AS badge_date,
+				p2.id AS post_id,
+				p2.creationdate AS post_date,
+				p2.title AS post_title
+			-- Vytvori tabulu s infom o useroch, ich badges a ich postoch
+			FROM users
+				JOIN badges b2 ON users.id = b2.userid
+				JOIN posts p2 ON p2.owneruserid = b2.userid
+			-- Filtrovanie userid a vsetkych postov ktore boli vytvorene skor ako badge
+			WHERE users.id = 120 AND b2.date >= p2.creationdate  -- userid je parameter
+		) AS bp
+		ORDER BY badge_id, bp.post_date DESC  -- Toto zaruci ze zaznamy su zoradene od najnovsieho postu.
+		-- To namena ze DISTINCT na zaciatku odfiltruje vsetky stare posty
+	) AS s
+	ORDER BY post_date, post_id
+) AS m
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+-- My comments
 -- SELECT
 -- 	ROW_NUMBER() OVER () AS position,
 -- 	badge_id,
@@ -47,40 +107,40 @@
 ;
 
 -- My posts
-SELECT
-	badge_id, badge_name,
-	TO_CHAR(badge_date AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MSOF:TZM') AS badge_date,
-	post_id, post_title,
-	TO_CHAR(post_date AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MSOF:TZM') AS post_date
-FROM (
-	SELECT
-		DISTINCT ON (post_date)
-		*
-	FROM (
-		SELECT
-			DISTINCT ON (badge_id)  -- Vyfiltrovanie duplikatov z subquery
-			*
-		FROM (
-			-- Ziska badge info + komentare ktore boli vytvorene skor ako badge
-			SELECT
-				b2.id AS badge_id,
-				b2.name AS badge_name,
-				b2.date AS badge_date,
-				p2.id AS post_id,
-				p2.creationdate AS post_date,
-				p2.title AS post_title
-			-- Vytvori tabulu s infom o useroch, ich badges a ich postoch
-			FROM users
-				JOIN badges b2 ON users.id = b2.userid
-				JOIN posts p2 ON p2.owneruserid = b2.userid
-			-- Filtrovanie userid a vsetkych postov ktore boli vytvorene skor ako badge
-			WHERE users.id = 120 AND b2.date >= p2.creationdate  -- userid je parameter
-		) AS bp
-		ORDER BY badge_id, bp.post_date DESC  -- Toto zaruci ze zaznamy su zoradene od najnovsieho postu.
-		-- To namena ze DISTINCT na zaciatku odfiltruje vsetky stare posty
-	) AS s
-	ORDER BY post_date, post_id
-) AS m
+-- SELECT
+-- 	badge_id, badge_name,
+-- 	TO_CHAR(badge_date AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MSOF:TZM') AS badge_date,
+-- 	post_id, post_title,
+-- 	TO_CHAR(post_date AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MSOF:TZM') AS post_date
+-- FROM (
+-- 	SELECT
+-- 		DISTINCT ON (post_date)
+-- 		*
+-- 	FROM (
+-- 		SELECT
+-- 			DISTINCT ON (badge_id)  -- Vyfiltrovanie duplikatov z subquery
+-- 			*
+-- 		FROM (
+-- 			-- Ziska badge info + komentare ktore boli vytvorene skor ako badge
+-- 			SELECT
+-- 				b2.id AS badge_id,
+-- 				b2.name AS badge_name,
+-- 				b2.date AS badge_date,
+-- 				p2.id AS post_id,
+-- 				p2.creationdate AS post_date,
+-- 				p2.title AS post_title
+-- 			-- Vytvori tabulu s infom o useroch, ich badges a ich postoch
+-- 			FROM users
+-- 				JOIN badges b2 ON users.id = b2.userid
+-- 				JOIN posts p2 ON p2.owneruserid = b2.userid
+-- 			-- Filtrovanie userid a vsetkych postov ktore boli vytvorene skor ako badge
+-- 			WHERE users.id = 120 AND b2.date >= p2.creationdate  -- userid je parameter
+-- 		) AS bp
+-- 		ORDER BY badge_id, bp.post_date DESC  -- Toto zaruci ze zaznamy su zoradene od najnovsieho postu.
+-- 		-- To namena ze DISTINCT na zaciatku odfiltruje vsetky stare posty
+-- 	) AS s
+-- 	ORDER BY post_date, post_id
+-- ) AS m
 
 
 -- Bajo (for reference only)
