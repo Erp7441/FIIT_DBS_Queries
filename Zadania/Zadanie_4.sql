@@ -1,183 +1,165 @@
-create type check_state as enum
-(
-	'waiting_for_arrival',
-	'checking',
-	'check_completed'
+CREATE TYPE check_state AS ENUM(
+    'waiting_for_arrival',
+    'checking',
+    'check_completed'
 );
 
-create type exemplar_status as enum
-(
-	'borrowed',
-	'on_display',
-	'in_warehouse',
-	'returning',
-	'sending',
-	'controlling'
+CREATE TYPE exemplar_status AS ENUM(
+    'borrowed',
+    'on_display',
+    'in_warehouse',
+    'returning',
+    'sending',
+    'controlling',
+    'decommissioned'
 );
 
-create type exposition_status as enum
-(
-	'preparing',
-	'ongoing',
-	'completed'
-);
+CREATE TYPE exposition_status AS ENUM('preparing', 'ongoing', 'completed');
 
-create table places
-(
-	expositionid uuid not null,
-	zoneid uuid not null,
-	startdate timestamp with time zone not null,
-	enddate timestamp with time zone not null
-);
+CREATE TABLE
+    places (
+        expositionid UUID NOT NULL,
+        zoneid UUID NOT NULL,
+        startdate TIMESTAMP WITH TIME ZONE NOT NULL,
+        enddate TIMESTAMP WITH TIME ZONE NOT NULL
+    );
 
-create table expositions
-(
-	id uuid not null,
-	name varchar(100) not null,
-	begindate timestamp with time zone not null,
-	enddate timestamp with time zone not null,
-	status exposition_status
-);
+CREATE TABLE
+    expositions (
+        id UUID NOT NULL DEFAULT gen_random_uuid(),
+        NAME VARCHAR(100) NOT NULL,
+        begindate TIMESTAMP WITH TIME ZONE NOT NULL,
+        enddate TIMESTAMP WITH TIME ZONE NOT NULL,
+        status exposition_status NOT NULL
+    );
 
-create table showcased_exemplars
-(
-	id uuid not null,
-	showcaseddate timestamp with time zone not null,
-	removaldate timestamp with time zone not null
-);
+CREATE TABLE
+    showcased_exemplars (
+        id UUID NOT NULL DEFAULT gen_random_uuid(),
+        showcaseddate TIMESTAMP WITH TIME ZONE NOT NULL,
+        removaldate TIMESTAMP WITH TIME ZONE NOT NULL
+    );
 
-create table zones
-(
-	id uuid not null,
-	name varchar(100) not null,
-	description varchar(255)
-);
+CREATE TABLE
+    zones (
+        id UUID NOT NULL DEFAULT gen_random_uuid(),
+        NAME VARCHAR(100) NOT NULL,
+        description VARCHAR(255)
+    );
 
-create table borrows
-(
-	exemplarid uuid not null,
-	institutionid uuid not null,
-	ownerid uuid not null,
-	borrowdate timestamp with time zone not null,
-	returndate timestamp with time zone not null,
-	checkstate check_state not null,
-	checklength time not null
-);
+CREATE TABLE
+    borrows (
+        exemplarid UUID NOT NULL,
+        institutionid UUID NOT NULL,
+        ownerid UUID NOT NULL,
+        borrowdate TIMESTAMP WITH TIME ZONE NOT NULL,
+        returndate TIMESTAMP WITH TIME ZONE NOT NULL,
+        checkstate check_state NOT NULL,
+        checklength TIME NOT NULL
+    );
 
-create table exemplar
-(
-	id uuid not null,
-	locationid uuid,
-	name varchar(100) not null,
-	status exemplar_status not null,
-	creationdate timestamp with time zone not null,
-	lastchangedate timestamp with time zone not null
-);
+CREATE TABLE
+    exemplars (
+        id UUID NOT NULL DEFAULT gen_random_uuid(),
+        locationid UUID,
+        NAME VARCHAR(100) NOT NULL,
+        status exemplar_status NOT NULL,
+        creationdate TIMESTAMP WITH TIME ZONE NOT NULL,
+        lastchangedate TIMESTAMP WITH TIME ZONE NOT NULL
+    );
 
-create table categories
-(
-	id uuid not null,
-	name varchar(100) not null,
-	description varchar(255)
-);
+CREATE TABLE
+    categories (
+        id UUID NOT NULL DEFAULT gen_random_uuid(),
+        NAME VARCHAR(100) NOT NULL,
+        description VARCHAR(255)
+    );
 
-create table institution
-(
-	id uuid not null,
-	name varchar(100) not null,
-	description varchar(255),
-	manager varchar(50) not null
-);
+CREATE TABLE
+    institutions (
+        id UUID NOT NULL DEFAULT gen_random_uuid(),
+        NAME VARCHAR(100) NOT NULL,
+        description VARCHAR(255),
+        manager VARCHAR(50) NOT NULL
+    );
 
-create table exemplar_showcased_exemplars
-(
-	showcasedexemplarsid uuid not null,
-	exemplarid uuid not null
-);
+CREATE TABLE
+    exemplars_showcased_exemplars (
+        showcasedexemplarsid UUID NOT NULL,
+        exemplarid UUID NOT NULL
+    );
 
-create table expositions_showcased_exemplars
-(
-	showcasedexemplarsid uuid not null,
-	expositionsid uuid not null
-);
+CREATE TABLE
+    expositions_showcased_exemplars (
+        showcasedexemplarsid UUID NOT NULL,
+        expositionsid UUID NOT NULL
+    );
 
-create table exemplar_categories
-(
-	exemplarid uuid not null,
-	categoriesid uuid not null
-);
+CREATE TABLE
+    exemplars_categories (
+        exemplarid UUID NOT NULL,
+        categoriesid UUID NOT NULL
+    );
 
-alter table expositions
-	add primary key (id);
+ALTER TABLE expositions
+ADD PRIMARY KEY (id);
 
-alter table places
-	add constraint fkplaces1
-		foreign key (expositionid) references expositions;
+ALTER TABLE places
+ADD CONSTRAINT fkplaces1 FOREIGN KEY (expositionid) REFERENCES expositions;
 
-alter table showcased_exemplars
-	add primary key (id);
+ALTER TABLE showcased_exemplars
+ADD PRIMARY KEY (id);
 
-alter table zones
-	add primary key (id);
+ALTER TABLE zones
+ADD PRIMARY KEY (id);
 
-alter table places
-	add constraint fkplaces2
-		foreign key (zoneid) references zones;
+ALTER TABLE places
+ADD CONSTRAINT fkplaces2 FOREIGN KEY (zoneid) REFERENCES zones;
 
-alter table exemplar
-	add primary key (id);
+ALTER TABLE exemplars
+ADD PRIMARY KEY (id);
 
-alter table exemplar
-	add constraint fkexemplar1
-		foreign key (locationid) references zones;
+ALTER TABLE exemplars
+ADD CONSTRAINT fkexemplar1 FOREIGN KEY (locationid) REFERENCES zones;
 
-alter table borrows
-	add constraint fkborrows1
-		foreign key (exemplarid) references exemplar;
+ALTER TABLE borrows
+ADD CONSTRAINT fkborrows1 FOREIGN KEY (exemplarid) REFERENCES exemplars;
 
-alter table categories
-	add primary key (id);
+ALTER TABLE categories
+ADD PRIMARY KEY (id);
 
-alter table institution
-	add primary key (id);
+ALTER TABLE institutions
+ADD PRIMARY KEY (id);
 
-alter table borrows
-	add constraint fkborrows2
-		foreign key (institutionid) references institution;
+ALTER TABLE borrows
+ADD CONSTRAINT fkborrows2 FOREIGN KEY (institutionid) REFERENCES institutions;
 
-alter table borrows
-	add constraint fkborrows3
-		foreign key (ownerid) references institution;
+ALTER TABLE borrows
+ADD CONSTRAINT fkborrows3 FOREIGN KEY (ownerid) REFERENCES institutions;
 
-alter table exemplar_showcased_exemplars
-	add primary key (showcasedexemplarsid, exemplarid);
+ALTER TABLE exemplars_showcased_exemplars
+ADD PRIMARY KEY (showcasedexemplarsid, exemplarid);
 
-alter table exemplar_showcased_exemplars
-	add constraint fkexemplar_showcased_exemplars1
-		foreign key (exemplarid) references exemplar;
+ALTER TABLE exemplars_showcased_exemplars
+ADD CONSTRAINT fkexemplars_showcased_exemplars1 FOREIGN KEY (exemplarid) REFERENCES exemplars;
 
-alter table exemplar_showcased_exemplars
-	add constraint fkexemplar_showcased_exemplars2
-		foreign key (showcasedexemplarsid) references showcased_exemplars;
+ALTER TABLE exemplars_showcased_exemplars
+ADD CONSTRAINT fkexemplars_showcased_exemplars2 FOREIGN KEY (showcasedexemplarsid) REFERENCES showcased_exemplars;
 
-alter table expositions_showcased_exemplars
-	add primary key (showcasedexemplarsid, expositionsid);
+ALTER TABLE expositions_showcased_exemplars
+ADD PRIMARY KEY (showcasedexemplarsid, expositionsid);
 
-alter table expositions_showcased_exemplars
-	add constraint fkexposition1
-		foreign key (expositionsid) references expositions;
+ALTER TABLE expositions_showcased_exemplars
+ADD CONSTRAINT fkexposition1 FOREIGN KEY (expositionsid) REFERENCES expositions;
 
-alter table expositions_showcased_exemplars
-	add constraint fkexposition2
-		foreign key (showcasedexemplarsid) references showcased_exemplars;
+ALTER TABLE expositions_showcased_exemplars
+ADD CONSTRAINT fkexposition2 FOREIGN KEY (showcasedexemplarsid) REFERENCES showcased_exemplars;
 
-alter table exemplar_categories
-	add primary key (exemplarid, categoriesid);
+ALTER TABLE exemplars_categories
+ADD PRIMARY KEY (exemplarid, categoriesid);
 
-alter table exemplar_categories
-	add constraint fkexemplar_categories1
-		foreign key (exemplarid) references exemplar;
+ALTER TABLE exemplars_categories
+ADD CONSTRAINT fkexemplars_categories1 FOREIGN KEY (exemplarid) REFERENCES exemplars;
 
-alter table exemplar_categories
-	add constraint fkexemplar_categories2
-		foreign key (categoriesid) references categories;
+ALTER TABLE exemplars_categories
+ADD CONSTRAINT fkexemplars_categories2 FOREIGN KEY (categoriesid) REFERENCES categories;
