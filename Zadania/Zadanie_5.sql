@@ -167,28 +167,27 @@ ALTER TABLE exemplars_categories
 ADD CONSTRAINT fkexemplars_categories2 FOREIGN KEY (categoriesid) REFERENCES categories;
 
 
-
-
-
-
-
-
+------------------------------------------------------------------------------
+--
+-- Triggre
+---
+------------------------------------------------------------------------------
 
 
 ------------------------------------------------------------------------------
 -- Datumy
 ------------------------------------------------------------------------------
--- Tento trigger aktualizuje dátum poslednej zmeny na aktuálny čas pri každej zmene záznamu
+-- Tento trigger aktualizuje datum poslednej zmeny na aktualny cas pri kazdej zmene zaznamu
 CREATE OR REPLACE FUNCTION set_last_change_date()
 RETURNS TRIGGER AS $$
 BEGIN
-	NEW.lastchangedate := NOW(); -- Aktualizácia lastchangedate pri zmene záznamu
+	NEW.lastchangedate := NOW(); -- Aktualizacia lastchangedate pri zmene zaznamu
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
 
--- Trigger, ktorý sa spustí pred aktualizáciou záznamu v tabuľke exemplars
+-- Trigger, ktory sa spusti pred aktualizaciou zaznamu v tabulke exemplars
 CREATE TRIGGER trigger_set_last_change_date_exemplars
 BEFORE UPDATE ON exemplars
 FOR EACH ROW EXECUTE FUNCTION set_last_change_date();
@@ -198,7 +197,7 @@ CREATE OR REPLACE FUNCTION prevent_creation_date_change()
 RETURNS TRIGGER AS $$
 BEGIN
   IF OLD.creationdate IS DISTINCT FROM NEW.creationdate THEN
-    RAISE EXCEPTION 'Zmena hodnoty creationdate je zakázaná.';
+    RAISE EXCEPTION 'Zmena hodnoty creationdate je zakazana.';
   END IF;
   RETURN NEW;
 END;
@@ -206,26 +205,25 @@ $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER trigger_prevent_column_change
 BEFORE UPDATE ON exemplars
-FOR EACH ROW
-EXECUTE FUNCTION prevent_creation_date_change();
+FOR EACH ROW EXECUTE FUNCTION prevent_creation_date_change();
 
 
 
 ------------------------------------------------------------------------------
 -- Vystavene exemplare
 ------------------------------------------------------------------------------
--- Tento trigger zabezpečí, že dátum vystavenia je skôr ako dátum odstránenia
+-- Tento trigger zabezpeci, ze datum vystavenia je skor ako datum odstranenia
 CREATE OR REPLACE FUNCTION validate_showcased_dates()
 RETURNS TRIGGER AS $$
 BEGIN
 	IF NEW.showcaseddate >= NEW.removaldate THEN
-		RAISE EXCEPTION 'ShowcasedDate must be earlier than RemovalDate.'; -- Kontrola platnosti dátumov
+		RAISE EXCEPTION 'ShowcasedDate must be earlier than RemovalDate.'; -- Kontrola platnosti datumov
 	END IF;
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
--- Trigger, ktorý sa spustí pred vložením alebo aktualizáciou záznamu v tabuľke showcased_exemplars
+-- Trigger, ktory sa spusti pred vlozenim alebo aktualizaciou zaznamu v tabulke showcased_exemplars
 CREATE TRIGGER trigger_validate_showcased_dates
 BEFORE INSERT OR UPDATE ON showcased_exemplars
 FOR EACH ROW EXECUTE FUNCTION validate_showcased_dates();
@@ -237,12 +235,16 @@ FOR EACH ROW EXECUTE FUNCTION validate_showcased_dates();
 CREATE OR REPLACE FUNCTION set_status_decommissioned()
 RETURNS TRIGGER AS $$
 BEGIN
-	-- Nastavenie stavu exemplára na 'Decommissioned' namiesto jeho zmazania
-	NEW.status := 'Decommissioned';
-	-- Aktualizácia záznamu s novým stavom
-	UPDATE exemplars SET status = NEW.status WHERE id = OLD.id;
-	-- Zrušenie operácie DELETE a návrat hodnoty NULL
-	RETURN NULL;
+	IF OLD.status = 'Decommissioned' THEN
+		RAISE INFO 'Exemplar % uz je vyradeny.', NEW.id;
+	ELSE
+		-- Nastavenie stavu exemplara na 'Decommissioned' namiesto jeho zmazania
+		NEW.status := 'Decommissioned';
+		-- Aktualizacia zaznamu s novym stavom
+		UPDATE exemplars SET status = NEW.status WHERE id = OLD.id;
+		-- Zrusenie operacie DELETE a navrat hodnoty NULL
+		RETURN NULL;
+	END IF;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -250,28 +252,44 @@ CREATE TRIGGER trigger_set_status_decommissioned
 BEFORE DELETE ON exemplars
 FOR EACH ROW EXECUTE FUNCTION set_status_decommissioned();
 
+
+CREATE OR REPLACE FUNCTION prevent_decommission_status_change()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF OLD.status = 'Decommissioned' AND OLD.status IS DISTINCT FROM NEW.status THEN
+    RAISE EXCEPTION 'Exemplar bol vyradeny.';
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_prevent_decommission_status_change
+BEFORE UPDATE ON exemplars
+FOR EACH ROW EXECUTE FUNCTION prevent_decommission_status_change();
+
+
 ------------------------------------------------------------------------------
 -- Vypozicky
 ------------------------------------------------------------------------------
--- Tento trigger zabezpečí, že dátum požičania je skôr ako dátum vrátenia
+-- Tento trigger zabezpeci, ze datum pozicania je skor ako datum vratenia
 CREATE OR REPLACE FUNCTION validate_borrow_dates()
 RETURNS TRIGGER AS $$
 BEGIN
 	IF NEW.borrowdate >= NEW.returndate THEN
-		RAISE EXCEPTION 'BorrowDate must be earlier than ReturnDate.'; -- Kontrola platnosti dátumov
+		RAISE EXCEPTION 'BorrowDate must be earlier than ReturnDate.'; -- Kontrola platnosti datumov
 	END IF;
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
--- Trigger, ktorý sa spustí pred vložením alebo aktualizáciou záznamu v tabuľke borrows
+-- Trigger, ktory sa spusti pred vlozenim alebo aktualizaciou zaznamu v tabulke borrows
 CREATE TRIGGER trigger_validate_borrow_dates
 BEFORE INSERT OR UPDATE ON borrows
 FOR EACH ROW EXECUTE FUNCTION validate_borrow_dates();
 
 
 
--- Tento trigger aktualizuje stav exemplára na 'borrowed' po vytvorení nového záznamu v borrows
+-- Tento trigger aktualizuje stav exemplara na 'borrowed' po vytvoreni noveho zaznamu v borrows
 CREATE OR REPLACE FUNCTION update_exemplar_status_to_borrowed()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -284,26 +302,31 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Trigger, ktorý sa spustí po vložení nového záznamu do tabuľky borrows
+-- Trigger, ktory sa spusti po vlozeni noveho zaznamu do tabulky borrows
 CREATE TRIGGER trigger_update_exemplar_status_to_borrowed
 AFTER INSERT ON borrows
 FOR EACH ROW EXECUTE FUNCTION update_exemplar_status_to_borrowed();
 
 
+------------------------------------------------------------------------------
+--
+-- Procedury
+---
+------------------------------------------------------------------------------
 
 
 ------------------------------------------------------------------------------
 -- Planovanie expozicie
 ------------------------------------------------------------------------------
--- Procedúra pre naplánovanie novej expozície s možnosťou určenia viacerých miest
-CREATE OR REPLACE FUNCTION plan_exposition(_name VARCHAR, _begindate TIMESTAMP, _enddate TIMESTAMP, _zoneids UUID[])
-RETURNS VOID AS $$
+-- Procedura pre naplanovanie novej expozicie s moznostou urcenia viacerych miest
+CREATE OR REPLACE PROCEDURE plan_exposition(_name VARCHAR, _begindate TIMESTAMP, _enddate TIMESTAMP, _zoneids UUID[])
+AS $$
 DECLARE
   _state exposition_status;
   _expositionid UUID;
   _zoneid UUID;
 BEGIN
-  -- Určenie stavu expozície na základe aktuálneho dátumu a času
+  -- Urcenie stavu expozicie na zaklade aktualneho datumu a casu
   IF _begindate > NOW() AND _enddate > NOW() THEN
     _state := 'preparing';
   ELSIF _begindate <= NOW() AND _enddate > NOW() THEN
@@ -312,26 +335,26 @@ BEGIN
     _state := 'completed';
   END IF;
 
-  -- Vloženie novej expozície do tabuľky expositions
+  -- Vlozenie novej expozicie do tabulky expositions
   INSERT INTO expositions (name, begindate, enddate, status)
   VALUES (_name, _begindate, _enddate, _state)
   RETURNING id INTO _expositionid;
 
-  -- Prechádzanie zoznamu identifikátorov zón a kontrola dostupnosti pre každú z nich
+  -- Prechadzanie zoznamu identifikatorov zon a kontrola dostupnosti pre kazdu z nich
   FOREACH _zoneid IN ARRAY _zoneids
   LOOP
-    -- Kontrola, či sa v danej zóne nekoná iná expozícia v plánovanom časovom období
+    -- Kontrola, ci sa v danej zone nekona ina expozicia v planovanom casovom obdobi
     IF NOT EXISTS (
       SELECT 1 FROM places
       WHERE zoneid = _zoneid AND (
         startdate < _enddate AND enddate > _begindate
       )
     ) THEN
-      -- Priradenie expozície do miesta, ak je to možné
+      -- Priradenie expozicie do miesta, ak je to mozne
       INSERT INTO places (expositionid, zoneid, startdate, enddate)
       VALUES (_expositionid, _zoneid, _begindate, _enddate);
     ELSE
-      RAISE WARNING 'V danej zóne % sa už koná iná expozícia v plánovanom časovom období. Skipujem', _zoneid;
+      RAISE WARNING 'V danej zone % sa uz kona ina expozicia v planovanom casovom obdobi. Skipujem', _zoneid;
     END IF;
   END LOOP;
 END;
@@ -342,25 +365,25 @@ $$ LANGUAGE plpgsql;
 ------------------------------------------------------------------------------
 -- Vkladanie exemplara
 ------------------------------------------------------------------------------
--- Procedúra pre vkladanie nového exemplára s automatickým nastavením stavu a dátumov
+-- Procedura pre vkladanie noveho exemplara s automatickym nastavenim stavu a datumov
 CREATE OR REPLACE PROCEDURE insert_exemplar(_name VARCHAR, _categoryid UUID) AS $$
 DECLARE
 	new_exemplar_id UUID;
 BEGIN
 	INSERT INTO exemplars (name, status)
 	VALUES (_name, 'in_warehouse')
-	RETURNING id INTO new_exemplar_id; -- Vrátenie ID nového exemplára
+	RETURNING id INTO new_exemplar_id; -- Vratenie ID noveho exemplara
 
 	INSERT INTO exemplars_categories (exemplarid, categoriesid)
-	VALUES (new_exemplar_id, _categoryid); -- Priradenie kategórie
+	VALUES (new_exemplar_id, _categoryid); -- Priradenie kategorie
 END;
 $$ LANGUAGE plpgsql;
 
 
--- Procedúra pre presun exemplára do inej zóny
+-- Procedura pre presun exemplara do inej zony
 CREATE OR REPLACE PROCEDURE move_exemplar(_exemplarid UUID, _zoneid UUID) AS $$
 BEGIN
-  UPDATE exemplars SET locationid = _zoneid WHERE id = _exemplarid; -- Aktualizácia polohy exemplára
+  UPDATE exemplars SET locationid = _zoneid WHERE id = _exemplarid; -- Aktualizacia polohy exemplara
 END;
 $$ LANGUAGE plpgsql;
 
@@ -369,18 +392,18 @@ $$ LANGUAGE plpgsql;
 ------------------------------------------------------------------------------
 -- Prevzatie exemplara
 ------------------------------------------------------------------------------
--- Procedúra pre prevzatie exemplára z inej inštitúcie a vytvorenie záznamu v borrows
+-- Procedura pre prevzatie exemplara z inej institucie a vytvorenie zaznamu v borrows
 CREATE OR REPLACE PROCEDURE receive_exemplar(_name VARCHAR, _ownerid UUID, _borrowdate TIMESTAMP, _returndate TIMESTAMP,
 _checklength TIME, _categoryid UUID) AS $$
 DECLARE
   new_exemplar_id UUID;
 BEGIN
-  -- Vytvorenie nového exemplára
+  -- Vytvorenie noveho exemplara
   SELECT insert_exemplar(_name, _categoryid) INTO new_exemplar_id;
 
-  -- Vytvorenie nového záznamu v borrows
-  INSERT INTO borrows (exemplarid, ownerid, borrowdate, returndate, checkstate, checklength)
-  VALUES (new_exemplar_id, _ownerid, _borrowdate, _returndate, 'waiting_for_arrival', _checklength);
+  -- Vytvorenie noveho zaznamu v borrows
+  INSERT INTO borrows (exemplarid, institutionid, ownerid, borrowdate, returndate, checkstate, checklength)
+  VALUES (new_exemplar_id, "MOJA?", _ownerid, _borrowdate, _returndate, 'waiting_for_arrival', _checklength);
 END;
 $$ LANGUAGE plpgsql;
 
@@ -388,13 +411,13 @@ $$ LANGUAGE plpgsql;
 ------------------------------------------------------------------------------
 -- Pozicanie exemplara
 ------------------------------------------------------------------------------
--- Procedúra pre zapožičanie exemplára inej inštitúcií
+-- Procedura pre zapozicanie exemplara inej institucii
 CREATE OR REPLACE PROCEDURE lend_exemplar(_exemplarid UUID, _institutionid UUID, _borrowdate TIMESTAMP,
 _returndate
 TIMESTAMP, _checklength TIME) AS $$
 BEGIN
-  INSERT INTO borrows (exemplarid, institutionid, borrowdate, returndate, checkstate, checklength)
-  VALUES (_exemplarid, _institutionid, _borrowdate, _returndate, 'sending', _checklength);
+  INSERT INTO borrows (exemplarid, institutionid, ownerid, borrowdate, returndate, checkstate, checklength)
+  VALUES (_exemplarid, _institutionid, "MOJA?",_borrowdate, _returndate, 'sending', _checklength);
 END;
 $$ LANGUAGE plpgsql;
 
@@ -402,13 +425,13 @@ $$ LANGUAGE plpgsql;
 ------------------------------------------------------------------------------
 -- Vystavenie exemplara
 ------------------------------------------------------------------------------
--- Procedúra pre vystavenie exemplára v expozícii s kontrolou kolízie dátumov a stavu exemplára
+-- Procedura pre vystavenie exemplara v expozicii s kontrolou kolizie datumov a stavu exemplara
 CREATE OR REPLACE PROCEDURE showcase_exemplar(_exemplarid UUID, _expositionid UUID, _showcaseddate TIMESTAMP,
 _removaldate TIMESTAMP) AS $$
 DECLARE
   new_showcased_exemplar_id UUID;
 BEGIN
-  -- Kontrola, či exemplár je 'in_warehouse' a nie je už vystavený alebo zapožičaný v danom časovom období
+  -- Kontrola, ci exemplar je 'in_warehouse' a nie je uz vystaveny alebo zapozicany v danom casovom obdobi
 	IF (SELECT status FROM exemplars WHERE id = _exemplarid) = 'in_warehouse' AND NOT EXISTS (
 		SELECT 1 FROM showcased_exemplars se
 		INNER JOIN expositions_showcased_exemplars ese ON se.id = ese.showcasedexemplarsid
@@ -420,19 +443,19 @@ BEGIN
 		   	(ese.expositionsid = _expositionid AND se.showcaseddate < _removaldate AND se.removaldate > _showcaseddate)
 		)
 	) THEN
-	-- Vytvorenie nového záznamu v tabuľke showcased_exemplars
+	-- Vytvorenie noveho zaznamu v tabulke showcased_exemplars
 	INSERT INTO showcased_exemplars (showcaseddate, removaldate)
 	VALUES (_showcaseddate, _removaldate)
 	RETURNING id INTO new_showcased_exemplar_id;
 
-	-- Aktualizácia stavu exemplára na 'on_display'
+	-- Aktualizacia stavu exemplara na 'on_display'
 	UPDATE exemplars SET status = 'on_display', lastchangedate = NOW() WHERE id = _exemplarid;
 
-	-- Pridanie záznamu do medzitabuľky exemplars_showcased_exemplars
+	-- Pridanie zaznamu do medzitabulky exemplars_showcased_exemplars
 	INSERT INTO exemplars_showcased_exemplars (exemplarid, showcasedexemplarsid)
 	VALUES (_exemplarid, new_showcased_exemplar_id);
 
-	-- Pridanie záznamu do medzitabuľky expositions_showcased_exemplars
+	-- Pridanie zaznamu do medzitabulky expositions_showcased_exemplars
 	INSERT INTO expositions_showcased_exemplars (expositionsid, showcasedexemplarsid)
 	VALUES (_expositionid, new_showcased_exemplar_id);
 	ELSE
@@ -440,3 +463,22 @@ BEGIN
 	END IF;
 END;
 $$ LANGUAGE plpgsql;
+
+
+-- Procedura pre presun exemplara do skladu
+CREATE OR REPLACE PROCEDURE move_exemplar_to_warehouse(_exemplarid UUID) AS $$
+BEGIN
+  -- Aktualizacia stavu exemplara na 'in_warehouse' a location_id na NULL
+  UPDATE exemplars
+  SET status = 'in_warehouse',
+      locationid = NULL,
+      lastchangedate = NOW()
+  WHERE id = _exemplarid;
+END;
+$$ LANGUAGE plpgsql;
+
+
+-- TODO:: Check pokial je decomnuty exemplar tak sa neda s nim nijako manipulovat, ziadne vystavy a vypozicky
+-- TODO:: Konzistentne vypisy
+-- TODO:: Ako oznacit moju instituciu?
+-- TODO:: Testovacie data podla fyzickeho modelu
