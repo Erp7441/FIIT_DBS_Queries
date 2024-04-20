@@ -235,11 +235,11 @@ FOR EACH ROW EXECUTE FUNCTION validate_showcased_dates();
 CREATE OR REPLACE FUNCTION set_status_decommissioned()
 RETURNS TRIGGER AS $$
 BEGIN
-	IF OLD.status = 'Decommissioned' THEN
+	IF OLD.status = 'decommissioned' THEN
 		RAISE INFO 'Exemplar % uz je vyradeny.', NEW.id;
 	ELSE
-		-- Nastavenie stavu exemplara na 'Decommissioned' namiesto jeho zmazania
-		NEW.status := 'Decommissioned';
+		-- Nastavenie stavu exemplara na 'decommissioned' namiesto jeho zmazania
+		NEW.status := 'decommissioned';
 		-- Aktualizacia zaznamu s novym stavom
 		UPDATE exemplars SET status = NEW.status WHERE id = OLD.id;
 		-- Zrusenie operacie DELETE a navrat hodnoty NULL
@@ -256,7 +256,7 @@ FOR EACH ROW EXECUTE FUNCTION set_status_decommissioned();
 CREATE OR REPLACE FUNCTION prevent_decommission_status_change()
 RETURNS TRIGGER AS $$
 BEGIN
-  IF OLD.status = 'Decommissioned' AND OLD.status IS DISTINCT FROM NEW.status THEN
+  IF OLD.status = 'decommissioned' AND OLD.status IS DISTINCT FROM NEW.status THEN
     RAISE EXCEPTION 'Exemplar bol vyradeny.';
   END IF;
   RETURN NEW;
@@ -383,7 +383,12 @@ $$ LANGUAGE plpgsql;
 -- Procedura pre presun exemplara do inej zony
 CREATE OR REPLACE PROCEDURE move_exemplar(_exemplarid UUID, _zoneid UUID) AS $$
 BEGIN
-  UPDATE exemplars SET locationid = _zoneid WHERE id = _exemplarid; -- Aktualizacia polohy exemplara
+	-- Kontrola, ci exemplar nie je decommissioned
+	IF (SELECT status FROM exemplars WHERE id = _exemplarid) = 'decommissioned' THEN
+		RAISE EXCEPTION 'Exemplar s ID % je decommissioned a nemoze byt presunuty.', _exemplarid;
+	END IF;
+
+	UPDATE exemplars SET locationid = _zoneid WHERE id = _exemplarid; -- Aktualizacia polohy exemplara
 END;
 $$ LANGUAGE plpgsql;
 
@@ -416,8 +421,13 @@ CREATE OR REPLACE PROCEDURE lend_exemplar(_exemplarid UUID, _institutionid UUID,
 _returndate
 TIMESTAMP, _checklength TIME) AS $$
 BEGIN
-  INSERT INTO borrows (exemplarid, institutionid, ownerid, borrowdate, returndate, checkstate, checklength)
-  VALUES (_exemplarid, _institutionid, "MOJA?",_borrowdate, _returndate, 'sending', _checklength);
+	-- Kontrola, ci exemplar nie je decommissioned
+	IF (SELECT status FROM exemplars WHERE id = _exemplarid) = 'decommissioned' THEN
+		RAISE EXCEPTION 'Exemplar s ID % je decommissioned a nemoze byt presunuty.', _exemplarid;
+	END IF;
+
+	INSERT INTO borrows (exemplarid, institutionid, ownerid, borrowdate, returndate, checkstate, checklength)
+	VALUES (_exemplarid, _institutionid, "MOJA?",_borrowdate, _returndate, 'sending', _checklength);
 END;
 $$ LANGUAGE plpgsql;
 
@@ -468,17 +478,23 @@ $$ LANGUAGE plpgsql;
 -- Procedura pre presun exemplara do skladu
 CREATE OR REPLACE PROCEDURE move_exemplar_to_warehouse(_exemplarid UUID) AS $$
 BEGIN
-  -- Aktualizacia stavu exemplara na 'in_warehouse' a location_id na NULL
-  UPDATE exemplars
-  SET status = 'in_warehouse',
-      locationid = NULL,
-      lastchangedate = NOW()
-  WHERE id = _exemplarid;
+	-- Kontrola, ci exemplar nie je decommissioned
+	IF (SELECT status FROM exemplars WHERE id = _exemplarid) = 'decommissioned' THEN
+		RAISE EXCEPTION 'Exemplar s ID % je decommissioned a nemoze byt presunuty.', _exemplarid;
+	END IF;
+
+	-- Aktualizacia stavu exemplara na 'in_warehouse' a location_id na NULL
+	UPDATE exemplars
+	SET status = 'in_warehouse',
+	  locationid = NULL,
+	  lastchangedate = NOW()
+	WHERE id = _exemplarid;
 END;
 $$ LANGUAGE plpgsql;
 
 
--- TODO:: Check pokial je decomnuty exemplar tak sa neda s nim nijako manipulovat, ziadne vystavy a vypozicky
+-- TODO:: Check pokial je decomnuty exemplar tak sa neda s nim nijako manipulovat, ziadne vystavy a vypozicky ani pohyby (I think done)
 -- TODO:: Konzistentne vypisy
 -- TODO:: Ako oznacit moju instituciu?
 -- TODO:: Testovacie data podla fyzickeho modelu
+-- TODO:: Preplachnutie cez formatter
