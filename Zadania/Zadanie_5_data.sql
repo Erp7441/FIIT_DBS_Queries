@@ -87,8 +87,24 @@ CALL receive_exemplar(
 	'Artefact',
 	'b7e4beef-dfae-4e39-a20c-bc9de3d49afd',
 	'72157d79-3c3c-48c6-8d0b-ff37a680123d',
-	'2024-11-01 00:00:00+02',
-	'2024-12-01 00:00:00+02',
+	'2024-07-10 00:00:00+02',
+	'2024-07-20 00:00:00+02',
 	'02:00:00',
 	'74580f8b-b4a3-4972-aed0-c86bbcbe0fc1'
-)
+);  -- Bol nam poslany exemplar
+
+CALL move_exemplar_to_warehouse('d22e20a2-7ab3-45da-8fbd-a59d672f1f2f');
+CALL check_exemplar('d22e20a2-7ab3-45da-8fbd-a59d672f1f2f'); -- Exemplar dorazil a ide na kontrolu
+CALL complete_exemplar_check('d22e20a2-7ab3-45da-8fbd-a59d672f1f2f'); -- Exemplar bol skontrolovany
+CALL showcase_exemplar(
+	'd22e20a2-7ab3-45da-8fbd-a59d672f1f2f',
+	'14748207-c04e-4349-9c4a-d79546a3a451',
+	'57bf03e3-3b1d-4af8-9ca7-3633812b49f6',
+	'2024-07-10 00:00:00+02',
+	'2024-07-20 00:00:00+02'
+); -- Exemplar bol vystaveny
+
+CALL move_exemplar_to_warehouse('d22e20a2-7ab3-45da-8fbd-a59d672f1f2f');
+CALL check_exemplar('d22e20a2-7ab3-45da-8fbd-a59d672f1f2f');
+CALL complete_exemplar_check('d22e20a2-7ab3-45da-8fbd-a59d672f1f2f'); -- Exemplar bol skontrolovany
+CALL return_borrowed_exemplar('d22e20a2-7ab3-45da-8fbd-a59d672f1f2f');
