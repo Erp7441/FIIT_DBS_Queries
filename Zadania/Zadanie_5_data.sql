@@ -1,22 +1,22 @@
--- Vkladanie do tabuľky institutions
+-- Vkladanie do tabulky institutions
 INSERT INTO institutions (name, description, manager) VALUES ('Moja Inštitúcia', 'Popis', 'Manažér');
 INSERT INTO institutions (name, description, manager) VALUES ('Inštitúcia 1', 'Popis 1', 'Manažér 1');
 INSERT INTO institutions (name, description, manager) VALUES ('Inštitúcia 2', 'Popis 2', 'Manažér 2');
 
--- Vkladanie do tabuľky categories
+-- Vkladanie do tabulky categories
 INSERT INTO categories (name, description) VALUES ('Kategória 1', 'Popis 1');
 INSERT INTO categories (name, description) VALUES ('Kategória 2', 'Popis 2');
 
--- Vkladanie do tabuľky zones
+-- Vkladanie do tabulky zones
 INSERT INTO zones (name, description) VALUES ('Zóna 1', 'Popis 1');
 INSERT INTO zones (name, description) VALUES ('Zóna 2', 'Popis 2');
 INSERT INTO zones (name, description) VALUES ('Zóna 3', 'Popis 3');
 
--- Vkladanie do tabuľky exemplars
+-- Vkladanie do tabulky exemplars
 CALL insert_exemplar('Exemplár 1', 'b85be437-f92d-4497-83d1-5f013972a44f');
 CALL insert_exemplar('Exemplár 2', '74580f8b-b4a3-4972-aed0-c86bbcbe0fc1');
 
--- Vkladanie do tabuľky expositions
+-- Vkladanie do tabulky expositions
 CALL plan_exposition(
 	'Expozícia 1',
 	'2024-05-01 00:00:00+02',
@@ -31,7 +31,7 @@ CALL plan_exposition(
 	ARRAY['57bf03e3-3b1d-4af8-9ca7-3633812b49f6']::UUID[]
 );
 
--- Vystavenie exemplárov
+-- Vystavenie exemplarov
 CALL showcase_exemplar(
 	'c3e38d72-2943-4e93-83f8-ed5d4260127c',
 	'71bdc25c-9720-4f3c-871f-5437dc18e07b',
@@ -48,7 +48,7 @@ CALL showcase_exemplar(
 	'2024-07-20 00:00:00+02'
 );
 
--- Presun exemplárov do zón
+-- Presun exemplarov do zón
 CALL move_exemplar(
 	'c3e38d72-2943-4e93-83f8-ed5d4260127c',
 	'5636f93f-92cd-4bc3-8a92-8c793357046a',
