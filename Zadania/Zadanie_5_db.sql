@@ -312,9 +312,6 @@ AFTER INSERT ON borrows
 FOR EACH ROW EXECUTE FUNCTION update_exemplar_status_to_borrowed();
 
 
--- TODO:: Trigger ktory mi vykrije prelinajuce sa datumy medzi expoziciami v ramci jednej zony
-
-
 ------------------------------------------------------------------------------
 --
 -- Procedury
