@@ -207,11 +207,6 @@ CREATE TRIGGER trigger_prevent_column_change
 BEFORE UPDATE ON exemplars
 FOR EACH ROW EXECUTE FUNCTION prevent_creation_date_change();
 
-
-
-------------------------------------------------------------------------------
--- Vystavene exemplare
-------------------------------------------------------------------------------
 -- Tento trigger zabezpeci, ze datum vystavenia je skor ako datum odstranenia
 CREATE OR REPLACE FUNCTION validate_showcased_dates()
 RETURNS TRIGGER AS $$
