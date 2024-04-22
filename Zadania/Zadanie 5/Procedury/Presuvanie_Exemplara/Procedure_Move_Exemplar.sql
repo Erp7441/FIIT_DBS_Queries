@@ -6,7 +6,8 @@ DECLARE
 	_zone_exists BOOLEAN;
 	_exemplar_exists BOOLEAN;
 	_exemplar_current_location UUID;
-	_exposition_id UUID;
+	_exemplar_exposition_id UUID;
+	_zone_exposition_id UUID;
 BEGIN
 	-- Kontrola, ci exemplar a zóna existujú
 	SELECT EXISTS(SELECT id FROM zones WHERE id = _zoneid) INTO _zone_exists;
@@ -32,12 +33,16 @@ BEGIN
 	END IF;
 
 	-- Kontrola, ci zóna patrí k expozícii
-	SELECT e.id INTO _exposition_id FROM expositions e
+	SELECT e.id INTO _exemplar_exposition_id FROM expositions e
 		JOIN places p ON e.id = p.expositionid
-		JOIN exemplars e2 ON p.zoneid = e2.locationid
-		WHERE p.zoneid = _zoneid AND p.enddate >= NOW() AND e2.id = _exemplarid;
+		LEFT JOIN exemplars e2 ON p.zoneid = e2.locationid
+		WHERE p.enddate >= NOW() AND e2.id = _exemplarid;
 
-	IF _exposition_id IS NULL THEN
+	SELECT e.id INTO _zone_exposition_id FROM expositions e
+		JOIN places p ON e.id = p.expositionid
+		WHERE p.enddate >= NOW() AND p.zoneid = _zoneid;
+
+	IF _exemplar_exposition_id != _zone_exposition_id THEN
 		RAISE EXCEPTION 'Zone with ID % does not belong to an exposition!', _zoneid;
 	END IF;
 
